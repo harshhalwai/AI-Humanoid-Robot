@@ -1,1 +1,1 @@
-web: gunicorn robot_ai.wsgi
+web: gunicorn config.wsgi
