@@ -27,6 +27,7 @@ def home(request):
             "admin": "/admin/"
         }
     })
+    
 
 urlpatterns = [
     path("", home),
