@@ -57,6 +57,9 @@ class UploadAudioView(views.APIView):
     Accepts an audio file upload, transcribes it, runs Gemini reasoning,
     generates response speech, resolves servo movements, and logs data.
     """
+    permission_classes = [permissions.AllowAny]
+    authentication_classes = []
+
     def post(self, request):
         serializer = VoiceInputSerializer(data=request.data)
         if not serializer.is_valid():
@@ -167,6 +170,9 @@ class ChatView(views.APIView):
     Allows text-based interaction, generating text, movement flags,
     and a corresponding voice audio file.
     """
+    permission_classes = [permissions.AllowAny]
+    authentication_classes = []
+
     def post(self, request):
         serializer = ChatInputSerializer(data=request.data)
         if not serializer.is_valid():
@@ -237,6 +243,9 @@ class TTSView(views.APIView):
     Endpoint: POST /api/tts/
     Independent Text-to-Speech API.
     """
+    permission_classes = [permissions.AllowAny]
+    authentication_classes = []
+
     def post(self, request):
         serializer = TTSInputSerializer(data=request.data)
         if not serializer.is_valid():
@@ -287,11 +296,13 @@ class RobotStatusView(views.APIView):
     GET: Reads the current robot telemetry and server health.
     POST: Updates battery levels, online state, and appends robot logs.
     """
+    permission_classes = [permissions.AllowAny]
+    authentication_classes = []
+
     def get(self, request):
         try:
             status_obj, _ = RobotStatus.objects.get_or_create(robot_id='humanoid_v1')
             
-            # Simple threshold check: if last ping was more than 30 seconds ago, mark offline
             threshold = timezone.now() - timezone.timedelta(seconds=30)
             if status_obj.last_ping < threshold and status_obj.is_online:
                 status_obj.is_online = False
@@ -303,7 +314,7 @@ class RobotStatusView(views.APIView):
                 "battery_level": status_obj.battery_level,
                 "is_online": status_obj.is_online,
                 "current_mode": status_obj.current_mode,
-                "last_ping": status_obj.last_ping
+                "last_ping": status_s.last_ping if hasattr(status_obj, 'last_ping') else status_obj.last_ping
             }
             return Response(response_data, status=status.HTTP_200_OK)
         except Exception as e:
@@ -323,17 +334,14 @@ class RobotStatusView(views.APIView):
         try:
             status_obj, _ = RobotStatus.objects.get_or_create(robot_id='humanoid_v1')
             
-            # Update telemetry parameters
             if battery_level is not None:
                 status_obj.battery_level = battery_level
             if current_mode is not None:
                 status_obj.current_mode = current_mode
                 
             status_obj.is_online = is_online
-            # Force last_ping update by saving
             status_obj.save()
             
-            # Record log message if provided
             if log_message:
                 RobotLog.objects.create(
                     robot_id=status_obj.robot_id,
@@ -374,7 +382,6 @@ class AudioDownloadView(views.APIView):
     def get(self, request, filename):
         file_path = os.path.join(settings.MEDIA_AUDIO_DIR, filename)
         
-        # Verify file path is safe to prevent directory traversal attacks
         base_dir = os.path.abspath(settings.MEDIA_AUDIO_DIR)
         target_path = os.path.abspath(file_path)
         
