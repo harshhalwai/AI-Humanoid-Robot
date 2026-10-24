@@ -23,7 +23,7 @@ def convert_to_wav(input_path: str, output_path: str) -> str:
         if ext in ['.pcm', '.raw'] or ext == '':
             cmd = [
                 'ffmpeg', '-y',
-                '-f', 's16le',       # Signed 16-bit little-endian PCM
+                '-f', 's32le',       # Signed 32-bit little-endian PCM (Matched with ESP32 32-bit I2S mode)
                 '-ar', '16000',      # Sample rate 16kHz
                 '-ac', '1',          # Mono channel
                 '-i', str(input_path),
